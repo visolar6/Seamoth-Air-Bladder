@@ -1,0 +1,478 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <RootNamespace>SeamothAirBladder</RootNamespace>
+    <AssemblyName>SeamothAirBladder</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <OutputType>Library</OutputType>
+    <Nullable>enable</Nullable>
+    <Deterministic>true</Deterministic>
+    <!-- Set to Release by default for smaller DLL -->
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+  </PropertyGroup>
+
+  <!-- Debug Configuration -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;SN1;SN;SUBNAUTICA</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <!-- Release Configuration -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;SN1;SN;SUBNAUTICA</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <!-- SN1 Configuration -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SN1|AnyCPU'">
+    <OutputPath>bin\SN1\</OutputPath>
+    <DefineConstants>SN1;SN;SUBNAUTICA</DefineConstants>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <!-- BZ Configuration -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='BZ|AnyCPU'">
+    <OutputPath>bin\BZ\</OutputPath>
+    <DefineConstants>BZ;BELOWZERO;BELOW_ZERO</DefineConstants>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <!-- Edit GameDir and BepInExDir in Directory.Build.props at repo root -->
+  <ItemGroup>
+    <!-- Game assemblies -->
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Assembly-CSharp-firstpass.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UWE.EditorModifications">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UWE.EditorModifications.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Core Unity -->
+    <Reference Include="UnityEngine">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.SharedInternalsModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.SharedInternalsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity UI -->
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UIElementsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity Audio & Video -->
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.AudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VideoModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.VideoModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity Physics -->
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.Physics2DModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.Physics2DModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TerrainModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.TerrainModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TerrainPhysicsModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.TerrainPhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ClothModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.ClothModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VehiclesModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.VehiclesModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity Graphics & Rendering -->
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.AnimationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextCoreModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.TextCoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.SpriteMaskModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.SpriteMaskModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.SpriteShapeModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.SpriteShapeModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TilemapModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.TilemapModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.GridModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.GridModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VFXModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.VFXModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity Input -->
+    <Reference Include="UnityEngine.InputModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.InputModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity Asset Management -->
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity Web Requests -->
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestWWWModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestAssetBundleModule">
+      <HintPath>
+        $(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UnityWebRequestAssetBundleModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestAudioModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestTextureModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity XR & VR -->
+    <Reference Include="UnityEngine.XRModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.XRModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VRModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.VRModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ARModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.ARModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity Subsystems & Networking -->
+    <Reference Include="UnityEngine.SubsystemsModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.SubsystemsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UNETModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UNETModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity AI & Platform -->
+    <Reference Include="UnityEngine.AIModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.AIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AndroidJNIModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.AndroidJNIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.GameCenterModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.GameCenterModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity Utilities -->
+    <Reference Include="UnityEngine.AccessibilityModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.AccessibilityModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.LocalizationModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.LocalizationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ProfilerModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.ProfilerModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PerformanceReportingModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.PerformanceReportingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ScreenCaptureModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.ScreenCaptureModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.StreamingModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.StreamingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TLSModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.TLSModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity Advanced -->
+    <Reference Include="UnityEngine.DirectorModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.DirectorModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.DSPGraphModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.DSPGraphModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ClusterInputModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.ClusterInputModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ClusterRendererModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.ClusterRendererModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CrashReportingModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.CrashReportingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.HotReloadModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.HotReloadModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.SubstanceModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.SubstanceModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UmbraModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UmbraModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityAnalyticsModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UnityAnalyticsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityConnectModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UnityConnectModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityTestProtocolModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.UnityTestProtocolModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.WindModule">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\UnityEngine.WindModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity Packages -->
+    <Reference Include="Unity.Addressables">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.Addressables.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Burst">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.Burst.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Burst.Unsafe">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.Burst.Unsafe.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Collections">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.Collections.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Formats.Fbx.Runtime">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.Formats.Fbx.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.InputSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.Mathematics.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.MemoryProfiler">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.MemoryProfiler.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Recorder">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.Recorder.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.ResourceManager">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.ResourceManager.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.ScriptableBuildPipeline">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.ScriptableBuildPipeline.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Timeline">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Unity.Timeline.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Third-party libraries -->
+    <Reference Include="Autodesk.Fbx">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Autodesk.Fbx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="com.rlabrecque.steamworks.net">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\com.rlabrecque.steamworks.net.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="FMODUnity">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\FMODUnity.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="LitJson">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\LitJson.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="LumenWorks">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\LumenWorks.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Sentry">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\Sentry.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SpriteAssetExtensions.Runtime">
+      <HintPath>$(GameDir)\\Subnautica_Data\\Managed\\SpriteAssetExtensions.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- BepInEx + Harmony + Nautilus -->
+    <Reference Include="BepInEx">
+      <HintPath>$(BepInExDir)\\core\\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExDir)\\core\\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Nautilus, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>$(BepInExDir)\\plugins\\Nautilus\\Nautilus.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Content -->
+  <ItemGroup>
+    <Content Include="Localizations.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\\**\\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+
+  <!-- Build Targets -->
+  <Target Name="CopyToTargetDir" AfterTargets="Build">
+    <Copy SourceFiles="$(TargetPath);../LICENSE" DestinationFolder="$(OutputPath)" />
+    <WriteLinesToFile File="$(OutputPath)load-order.txt" Overwrite="True" />
+    <MakeDir Directories="$(OutputPath)plugins" />
+  </Target>
+
+  <Target Name="CopyToModsDir" AfterTargets="CopyToTargetDir" Condition="'$(Configuration)' == 'Debug' And Exists('game-dirs.txt')">
+    <ReadLinesFromFile File="game-dirs.txt">
+      <Output TaskParameter="Lines" ItemName="GameDirs" />
+    </ReadLinesFromFile>
+    <CreateItem Include="$(OutputPath)*">
+      <Output TaskParameter="Include" ItemName="TargetFiles" />
+    </CreateItem>
+    <CreateProperty Value="BepInEx/plugins/$(ProjectName)">
+      <Output TaskParameter="Value" PropertyName="PluginDir" />
+    </CreateProperty>
+    <Copy SourceFiles="@(TargetFiles)" DestinationFolder="%(GameDirs.Identity)/$(PluginDir)" />
+    <MakeDir Directories="%(GameDirs.Identity)/$(PluginDir)" />
+  </Target>
+
+  <Target Name="ZipDist" AfterTargets="CopyToTargetDir" Condition="'$(Configuration)' == 'Release'">
+    <CreateItem Include="$(OutputPath)**/*">
+      <Output TaskParameter="Include" ItemName="TargetFiles" />
+    </CreateItem>
+    <Copy SourceFiles="@(TargetFiles)" DestinationFolder="bin/built/$(ProjectName)" />
+    <MakeDir Directories="bin/built/$(ProjectName)/" />
+    <ZipDirectory SourceDirectory="bin/built" DestinationFile="bin/$(ProjectName).$(Configuration).zip" Overwrite="True" />
+  </Target>
+</Project>

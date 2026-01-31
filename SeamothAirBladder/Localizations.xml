@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LocalizationPackages>
+    <LocalizationPackage Lang="English">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_AutoInflate">Auto Inflate</Text>
+        <Text key="Options.SeamothAirBladder_AutoInflate.Tooltip">If enabled, the Seamoth will automatically inflate when its health drops below the defined threshold.</Text>
+        <Text key="Options.SeamothAirBladder_AutoInflateHealthThreshold">Auto Inflate Health Threshold (%)</Text>
+        <Text key="Options.SeamothAirBladder_AutoInflateHealthThreshold.Tooltip">Adjusts the health threshold at which the Seamoth will automatically inflate.</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">Seamoth air bladder</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">A module that increases the Seamoth's buoyancy, allowing it to ascend quickly.</Text>
+    </LocalizationPackage>
+</LocalizationPackages>

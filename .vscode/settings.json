@@ -1,0 +1,7 @@
+{
+    "[xml]": {
+        "editor.formatOnSave": true,
+        "editor.wordWrap": "off",
+    },
+    "xmlTools.splitAttributesOnFormat": false
+}
