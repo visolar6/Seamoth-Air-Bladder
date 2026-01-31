@@ -21,7 +21,11 @@ namespace SeamothAirBladder.Items
         public SeamothAirBladderModule()
         {
             Sprite? sprite = ResourceHandler.LoadSpriteFromFile("Assets/Sprite/seamothairbladder.png");
-            if (sprite == null)
+            if (sprite != null)
+            {
+                sprite.name = "seamothairbladder";
+            }
+            else
             {
                 Plugin.Log?.LogError("Failed to load Seamoth Air Bladder module icon sprite.");
             }
@@ -73,13 +77,18 @@ namespace SeamothAirBladder.Items
         private void OnModuleAdded(Vehicle vehicle, int slotID)
         {
             if (!vehicle.gameObject.TryGetComponent(out SeamothAirBladderBehavior mono))
-                vehicle.gameObject.EnsureComponent<SeamothAirBladderBehavior>();
+                mono = vehicle.gameObject.EnsureComponent<SeamothAirBladderBehavior>();
+
+            // Refresh bar position to match the new slot
+            mono?.RefreshBarPosition();
         }
 
         private void OnModuleRemoved(Vehicle vehicle, int slotID)
         {
+            // Don't destroy the behavior - let the bar's continuous position checking handle hiding/showing
+            // This avoids race conditions when moving modules between slots
             if (vehicle.gameObject.TryGetComponent(out SeamothAirBladderBehavior mono))
-                UnityEngine.Object.Destroy(mono);
+                mono?.RefreshBarPosition();
         }
 
         private void OnModuleUsed(Vehicle vehicle, int slotID, float charge, float chargeScalar)

@@ -7,86 +7,331 @@ namespace SeamothAirBladder.UI
 {
     public class uGUI_SeamothAirBladderBar
     {
-        private Image barImage;
-        private Canvas canvas;
+        private Image? barImage;
+        private Canvas? canvas;
+        private GameObject? barRoot;
+        private Transform? currentSlot;
+        private int lastKnownSlotIndex = -1;
+
+        // Simple timer for slot monitoring
+        private float nextPositionCheckTime = 0f;
+        private const float CheckInterval = 0.1f; // 100ms
 
         public float FillAmount
         {
             get => barImage != null ? barImage.fillAmount : 0f;
-            set { if (barImage != null) barImage.fillAmount = Mathf.Clamp01(value); }
+            set { barImage?.fillAmount = Mathf.Clamp01(value); }
         }
 
         public Color BarColor
         {
             get => barImage != null ? barImage.color : Color.white;
-            set { if (barImage != null) barImage.color = value; }
+            set { barImage?.color = value; }
         }
 
         public void Create()
         {
-            // Create Canvas
-            canvas = new GameObject("SimpleAirBarCanvas").AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 5000;
-            Object.DontDestroyOnLoad(canvas.gameObject);
+            // Initialize timer
+            nextPositionCheckTime = Time.time;
 
-            // Create Bar Background
-            var bgGO = new GameObject("BarBackground");
-            bgGO.transform.SetParent(canvas.transform, false);
+            Transform? seamothHUDParent = FindSeamothHUDParent();
+
+            if (seamothHUDParent != null)
+            {
+                Plugin.Log?.LogInfo($"[AirBladderBar] Found HUD parent: {seamothHUDParent.name}");
+                // Center on the slot icon (0.5, 0.5 anchor) 
+                CreateBarWithShaderProps(seamothHUDParent, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(67, 67), 37f, 8f, 0.1f);
+            }
+            else
+            {
+                Plugin.Log?.LogWarning("[AirBladderBar] Could not find slot on initial creation, will retry with backoff");
+            }
+        }
+
+        private Transform? FindSeamothHUDParent()
+        {
+            Plugin.Log?.LogInfo("[AirBladderBar] Searching for QuickSlots with vehicle modules");
+
+            // Find ScreenCanvas
+            var allCanvases = Object.FindObjectsOfType<Canvas>();
+            foreach (var canvas in allCanvases)
+            {
+                if (canvas.name == "ScreenCanvas")
+                {
+                    var hud = canvas.transform.Find("HUD");
+                    if (hud != null)
+                    {
+                        var content = hud.Find("Content");
+                        if (content != null)
+                        {
+                            // QuickSlots contains vehicle module icons when in a vehicle
+                            var quickSlots = content.Find("QuickSlots");
+                            if (quickSlots != null)
+                            {
+                                Plugin.Log?.LogInfo($"[AirBladderBar] Found QuickSlots, searching for air bladder module...");
+
+                                // Search all slots for the air bladder module
+                                foreach (Transform child in quickSlots)
+                                {
+                                    if (child.name.StartsWith("QuickSlot Icon"))
+                                    {
+                                        // Check if this slot has the air bladder module
+                                        var foreground = child.Find("Foreground");
+                                        if (foreground != null)
+                                        {
+                                            var icon = foreground.GetComponent<uGUI_Icon>();
+                                            // Only match our specific sprite name
+                                            if (icon != null && icon.sprite != null &&
+                                                icon.sprite.name.ToLower().Contains("seamothairbladder"))
+                                            {
+                                                // Verify it's actually the air bladder by checking parent has uGUI_ItemIcon
+                                                var itemIcon = child.GetComponent<uGUI_ItemIcon>();
+                                                if (itemIcon != null)
+                                                {
+                                                    Plugin.Log?.LogInfo($"[AirBladderBar] Found air bladder module slot");
+                                                    return child;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // No fallback - only render on specific slot, never on container
+                                Plugin.Log?.LogWarning("[AirBladderBar] Could not find air bladder module slot");
+                                return null;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Plugin.Log?.LogWarning("[AirBladderBar] QuickSlots not found");
+            return null;
+        }
+
+        private void CreateBarWithShaderProps(Transform parent, Vector2 parentAnchor, Vector2 offset, Vector2 size, float radius, float width, float cut)
+        {
+            var bgGO = new GameObject($"AirBladderBar_BG");
+            barRoot = bgGO; // Store reference to root GameObject
+            bgGO.transform.SetParent(parent, false);
             var bgRect = bgGO.AddComponent<RectTransform>();
-            bgRect.anchorMin = new Vector2(0.5f, 0.1f);
-            bgRect.anchorMax = new Vector2(0.5f, 0.1f);
-            bgRect.pivot = new Vector2(0.5f, 0.5f);
-            bgRect.sizeDelta = new Vector2(67, 67);
-            bgRect.anchoredPosition = Vector2.zero;
+            bgRect.anchorMin = parentAnchor;
+            bgRect.anchorMax = parentAnchor;
+            bgRect.pivot = new Vector2(0.5f, 0.5f); // Center pivot
+            bgRect.sizeDelta = size;
+            bgRect.anchoredPosition = offset; // Offset from anchor
             var bgImage = bgGO.AddComponent<Image>();
-            bgImage.color = new Color(0, 0, 0, 0.5f);
+            bgImage.color = new Color(0, 0, 0, 0f); // Fully transparent
+            bgImage.raycastTarget = false;
 
-            // Create Bar Foreground
-            var barGO = new GameObject("Bar");
+            var barGO = new GameObject($"AirBladderBar");
             barGO.transform.SetParent(bgGO.transform, false);
             var barRect = barGO.AddComponent<RectTransform>();
             barRect.anchorMin = new Vector2(0.5f, 0.5f);
             barRect.anchorMax = new Vector2(0.5f, 0.5f);
             barRect.pivot = new Vector2(0.5f, 0.5f);
-            barRect.sizeDelta = new Vector2(67, 67);
+            barRect.sizeDelta = size;
             barRect.anchoredPosition = Vector2.zero;
-            barImage = barGO.AddComponent<Image>();
-            // Use a circular sprite - Radial360 needs proper geometry
-            var circleSprite = ResourceHandler.LoadSpriteFromFile("Assets/Sprite/circle.png");
-            barImage.sprite = circleSprite;
-            barImage.type = Image.Type.Filled;
-            barImage.fillMethod = Image.FillMethod.Radial360;
-            barImage.fillOrigin = (int)Image.Origin360.Bottom; // Match vanilla (fillOrigin = 0)
-            barImage.fillClockwise = true;
-            barImage.fillAmount = 1f;
-            barImage.color = Color.green;
+
+            var img = barGO.AddComponent<Image>();
+            img.sprite = null; // No sprite, like vanilla
+            img.type = Image.Type.Simple; // Simple type, like vanilla
+            img.color = Color.white; // White to allow material colors through
+
             var iconBarMat = Resources.FindObjectsOfTypeAll<Material>()
                 .FirstOrDefault(m => m.name == "UI/IconBar");
             if (iconBarMat != null)
             {
-                barImage.material = iconBarMat;
-                Debug.Log("[SeamothAirBladderBar] Successfully applied UI/IconBar material");
+                // Create material instance to avoid modifying the shared material
+                var matInstance = new Material(iconBarMat);
+                img.material = matInstance;
+
+                // Set the shader properties to match vanilla
+                matInstance.SetFloat("_Radius", radius);
+                matInstance.SetFloat("_Width", width);
+                matInstance.SetFloat("_Cut", cut);
+                matInstance.SetFloat("_Value", 1f); // Full bar
+                matInstance.SetVector("_Size", new Vector4(size.x, size.y, 0, 0));
+
+                // Critical properties that were missing!
+                matInstance.SetFloat("_Antialias", 1.5f);
+                matInstance.SetFloat("_Edge", 2.3f);
+                matInstance.SetColor("_ColorBackground", new Color(0.212f, 0.318f, 0.525f, 1f));
+                matInstance.SetColor("_ColorEdge", new Color(0.867f, 0.961f, 0.996f, 0.7f));
+
+                // Color gradient properties
+                matInstance.SetFloat("_Value0", 0.2f);
+                matInstance.SetFloat("_Value1", 0.5f);
+                matInstance.SetFloat("_Value2", 0.8f);
+                matInstance.SetColor("_Color0", new Color(0.816f, 0.447f, 0.325f, 1f)); // Red/orange
+                matInstance.SetColor("_Color1", new Color(0.976f, 0.839f, 0.341f, 1f)); // Yellow
+                matInstance.SetColor("_Color2", new Color(0.643f, 0.843f, 0.412f, 1f)); // Green
+
+                // Log to verify
+                Plugin.Log?.LogInfo($"Created bar with R={radius}, W={width}, C={cut}");
             }
             else
             {
-                Debug.LogWarning("[SeamothAirBladderBar] UI/IconBar material not found!");
+                Plugin.Log?.LogError("UI/IconBar material not found!");
             }
+
+            if (barImage == null)
+                barImage = img;
+        }
+
+        /// <summary>
+        /// Repositions the bar to the current slot containing the air bladder module.
+        /// Call this when the module is added or moved between slots.
+        /// </summary>
+        public void RefreshPosition()
+        {
+            // Just call UpdateBarPosition - it handles creating the bar if needed
+            UpdateBarPosition();
         }
 
         public void Update(float airRemaining, float airCapacity)
         {
-            if (barImage == null) return;
-            float fill = Mathf.Clamp01(airRemaining / airCapacity);
-            barImage.fillAmount = fill;
+            // Check position every 100ms to detect slot changes and vehicle entry/exit
+            if (Time.time >= nextPositionCheckTime)
+            {
+                UpdateBarPosition();
+                nextPositionCheckTime = Time.time + CheckInterval;
+            }
 
-            // Change color based on fill level
-            if (fill > 0.5f)
-                barImage.color = Color.green;
-            else if (fill > 0.25f)
-                barImage.color = Color.yellow;
-            else
-                barImage.color = Color.red;
+            // Only update fill if bar exists
+            if (barImage != null)
+            {
+                float fill = Mathf.Clamp01(airRemaining / airCapacity);
+                barImage.material?.SetFloat("_Value", fill);
+            }
+        }
+
+        private void UpdateBarPosition()
+        {
+            // Find which slot currently has the air bladder module
+            var slotWithModule = FindSlotWithAirBladderModule();
+
+            if (slotWithModule == null)
+            {
+                // Module not found - hide the bar
+                if (barRoot != null && barRoot.activeSelf)
+                {
+                    Plugin.Log?.LogInfo("[AirBladderBar] Module removed, hiding bar");
+                    barRoot.SetActive(false);
+                }
+
+                // Reset search if we previously had a valid slot (exited vehicle)
+                if (lastKnownSlotIndex >= 0)
+                {
+                    Plugin.Log?.LogInfo("[AirBladderBar] Lost slot, will search again");
+                }
+
+                lastKnownSlotIndex = -1;
+                return;
+            }
+
+            // Get slot index
+            int slotIndex = GetSlotIndex(slotWithModule);
+
+            // Check if slot changed
+            if (slotIndex != lastKnownSlotIndex)
+            {
+                Plugin.Log?.LogInfo($"[AirBladderBar] Module moved to slot {slotIndex}, updating position");
+
+                // Create bar if it doesn't exist yet
+                if (barRoot == null)
+                {
+                    Plugin.Log?.LogInfo("[AirBladderBar] Creating bar now that slot is found");
+                    CreateBarWithShaderProps(slotWithModule, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(67, 67), 37f, 9f, 0.1f);
+                }
+                else
+                {
+                    // Re-parent to new slot
+                    barRoot.transform.SetParent(slotWithModule, false);
+                    var bgRect = barRoot.GetComponent<RectTransform>();
+                    if (bgRect != null)
+                    {
+                        // Reset anchors to match original setup
+                        bgRect.anchorMin = new Vector2(0.5f, 0.5f);
+                        bgRect.anchorMax = new Vector2(0.5f, 0.5f);
+                        bgRect.pivot = new Vector2(0.5f, 0.5f);
+                        bgRect.anchoredPosition = Vector2.zero;
+                    }
+                    barRoot.SetActive(true);
+                }
+
+                currentSlot = slotWithModule;
+                lastKnownSlotIndex = slotIndex;
+            }
+            else if (barRoot != null && !barRoot.activeSelf)
+            {
+                // Module is back, show the bar
+                Plugin.Log?.LogInfo("[AirBladderBar] Module found again, showing bar");
+                barRoot.SetActive(true);
+            }
+        }
+
+        private Transform? FindSlotWithAirBladderModule()
+        {
+            Plugin.Log?.LogInfo("[AirBladderBar] FindSlotWithAirBladderModule called");
+            var allCanvases = Object.FindObjectsOfType<Canvas>();
+            foreach (var canvas in allCanvases)
+            {
+                if (canvas.name == "ScreenCanvas")
+                {
+                    var quickSlots = canvas.transform.Find("HUD")?.Find("Content")?.Find("QuickSlots");
+                    if (quickSlots != null)
+                    {
+                        int slotCount = 0;
+                        foreach (Transform child in quickSlots)
+                        {
+                            if (child.name.StartsWith("QuickSlot Icon"))
+                            {
+                                // Check if this slot has the air bladder module
+                                var foreground = child.Find("Foreground");
+                                if (foreground != null)
+                                {
+                                    var icon = foreground.GetComponent<uGUI_Icon>();
+                                    Plugin.Log?.LogInfo($"[AirBladderBar] Slot {slotCount}: sprite={icon?.sprite?.name ?? "null"}");
+
+                                    // Only match our specific sprite name
+                                    if (icon != null && icon.sprite != null &&
+                                        icon.sprite.name.ToLower().Contains("seamothairbladder"))
+                                    {
+                                        // Verify it's actually the air bladder by checking parent has uGUI_ItemIcon
+                                        var itemIcon = child.GetComponent<uGUI_ItemIcon>();
+                                        if (itemIcon != null)
+                                        {
+                                            Plugin.Log?.LogInfo($"[AirBladderBar] Found module in slot {slotCount}");
+                                            return child;
+                                        }
+                                    }
+                                }
+                                slotCount++;
+                            }
+                        }
+                        Plugin.Log?.LogInfo($"[AirBladderBar] Searched {slotCount} slots, module not found");
+                    }
+                }
+            }
+            Plugin.Log?.LogInfo("[AirBladderBar] QuickSlots not found");
+            return null;
+        }
+
+        private int GetSlotIndex(Transform slot)
+        {
+            if (slot.parent == null) return -1;
+
+            int index = 0;
+            foreach (Transform child in slot.parent)
+            {
+                if (child.name.StartsWith("QuickSlot Icon"))
+                {
+                    if (child == slot) return index;
+                    index++;
+                }
+            }
+            return -1;
         }
 
         public void Destroy()
