@@ -93,18 +93,18 @@ namespace SeamothAirBladder.Items
 
         private void OnModuleUsed(Vehicle vehicle, int slotID, float charge, float chargeScalar)
         {
-            if (!vehicle.gameObject.TryGetComponent(out SeamothAirBladderBehavior mono))
-                mono = vehicle.gameObject.EnsureComponent<SeamothAirBladderBehavior>();
+            if (!vehicle.gameObject.TryGetComponent(out SeamothAirBladderBehavior behavior))
+                behavior = vehicle.gameObject.EnsureComponent<SeamothAirBladderBehavior>();
 
             try
             {
-                if (mono.IsInflated)
+                if (behavior.IsInflated)
                 {
-                    mono.Deflate();
+                    behavior.Deflate();
                 }
                 else
                 {
-                    mono.Inflate();
+                    behavior.Inflate();
                 }
             }
             catch (Exception e)

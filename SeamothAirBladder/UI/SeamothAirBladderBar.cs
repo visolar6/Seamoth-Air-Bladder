@@ -1,11 +1,10 @@
 using System.Linq;
-using SeamothAirBladder.Utilities;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace SeamothAirBladder.UI
 {
-    public class uGUI_SeamothAirBladderBar
+    public class SeamothAirBladderBar
     {
         private Image? barImage;
         private GameObject? barRoot;

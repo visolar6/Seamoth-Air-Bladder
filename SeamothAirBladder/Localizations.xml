@@ -2,13 +2,144 @@
 <LocalizationPackages>
     <LocalizationPackage Lang="English">
         <!-- Options -->
-        <Text key="Options.SeamothAirBladder_AutoInflate">Auto Inflate</Text>
-        <Text key="Options.SeamothAirBladder_AutoInflate.Tooltip">If enabled, the Seamoth will automatically inflate when its health drops below the defined threshold.</Text>
-        <Text key="Options.SeamothAirBladder_AutoInflateHealthThreshold">Auto Inflate Health Threshold (%)</Text>
-        <Text key="Options.SeamothAirBladder_AutoInflateHealthThreshold.Tooltip">Adjusts the health threshold at which the Seamoth will automatically inflate.</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">Buoyancy Force</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">Adjusts the upward force applied when the Seamoth air bladder is activated. Higher values result in faster ascents.</Text>
 
         <!-- Seamoth Air Bladder -->
         <Text key="SeamothAirBladderModule">Seamoth air bladder</Text>
         <Text key="Tooltip_SeamothAirBladderModule">A module that increases the Seamoth's buoyancy, allowing it to ascend quickly.</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">Air bladder system already installed</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="French">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">Force de flottabilité</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">Ajuste la force ascendante appliquée lorsque la vessie gazeuse du Seamoth est activée. Des valeurs plus élevées entraînent des ascensions plus rapides.</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">Vessie gazeuse Seamoth</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">Un module qui augmente la flottabilité du Seamoth, lui permettant de remonter rapidement.</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">Système de vessie gazeuse déjà installé</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="Spanish">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">Fuerza de flotabilidad</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">Ajusta la fuerza ascendente aplicada cuando se activa la vejiga natatoria del Seamoth. Valores más altos resultan en ascensos más rápidos.</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">Vejiga natatoria Seamoth</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">Un módulo que aumenta la flotabilidad del Seamoth, permitiéndole ascender rápidamente.</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">Sistema de vejiga natatoria ya instalado</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="German">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">Auftriebskraft</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">Passt die Aufwärtskraft an, die angewendet wird, wenn die Seamoth-Schwimmblase aktiviert wird. Höhere Werte führen zu schnelleren Aufstiegen.</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">Seamoth-Schwimmblase</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">Ein Modul, das den Auftrieb des Seamoth erhöht und ihm ermöglicht, schnell aufzusteigen.</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">Schwimmblasen-System bereits installiert</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="Italian">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">Forza di galleggiamento</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">Regola la forza ascendente applicata quando la vescica natatoria del Seamoth è attivata. Valori più alti risultano in risalite più rapide.</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">Vescica natatoria Seamoth</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">Un modulo che aumenta il galleggiamento del Seamoth, permettendogli di risalire rapidamente.</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">Sistema di vescica natatoria già installato</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="Portuguese">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">Força de flutuação</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">Ajusta a força ascendente aplicada quando a bexiga natatória do Seamoth é ativada. Valores mais altos resultam em ascensões mais rápidas.</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">Bexiga natatória Seamoth</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">Um módulo que aumenta a flutuabilidade do Seamoth, permitindo que ele suba rapidamente.</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">Sistema de bexiga natatória já instalado</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="Russian">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">Сила плавучести</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">Регулирует силу подъёма, применяемую при активации плавательного пузыря Seamoth. Более высокие значения приводят к более быстрым всплытиям.</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">Плавательный пузырь Seamoth</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">Модуль, который увеличивает плавучесть Seamoth, позволяя ему быстро всплывать.</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">Система плавательного пузыря уже установлена</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="Japanese">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">浮力</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">シーモスのエアブラダーが起動したときに適用される上向きの力を調整します。高い値ほど速く浮上します。</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">シーモス エアブラダー</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">シーモスの浮力を高め、速やかに浮上できるようにするモジュールです。</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">エアブラダーシステムは既にインストールされています</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="Korean">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">부력</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">시모스 부레가 활성화되었을 때 적용되는 상승력을 조정합니다. 높은 값은 더 빠른 상승을 의미합니다.</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">시모스 부레</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">시모스의 부력을 증가시켜 빠르게 상승할 수 있도록 하는 모듈입니다.</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">부레 시스템이 이미 설치되어 있습니다</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="ChineseSimplified">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">浮力</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">调整海蛾号气囊激活时施加的向上力。数值越高，上浮速度越快。</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">海蛾号气囊</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">一个增加海蛾号浮力的模块，使其能够快速上浮。</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">气囊系统已安装</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="ChineseTraditional">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">浮力</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">調整海蛾號氣囊啟動時施加的向上力。數值越高，上浮速度越快。</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">海蛾號氣囊</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">一個增加海蛾號浮力的模組，使其能夠快速上浮。</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">氣囊系統已安裝</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="Polish">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">Siła wyporu</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">Dostosowuje siłę unoszącą stosowaną, gdy pęcherz pławny Seamotha jest aktywowany. Wyższe wartości skutkują szybszym wynurzaniem.</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">Pęcherz pławny Seamotha</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">Moduł, który zwiększa wypór Seamotha, pozwalając mu szybko się wynurzać.</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">System pęcherza pławnego już zainstalowany</Text>
+    </LocalizationPackage>
+
+    <LocalizationPackage Lang="Dutch">
+        <!-- Options -->
+        <Text key="Options.SeamothAirBladder_BuoyancyForce">Drijfkracht</Text>
+        <Text key="Options.SeamothAirBladder_BuoyancyForce.Tooltip">Past de opwaartse kracht aan die wordt toegepast wanneer de Seamoth zwemblaas is geactiveerd. Hogere waarden resulteren in snellere opstijgingen.</Text>
+
+        <!-- Seamoth Air Bladder -->
+        <Text key="SeamothAirBladderModule">Seamoth zwemblaas</Text>
+        <Text key="Tooltip_SeamothAirBladderModule">Een module die het drijfvermogen van de Seamoth verhoogt, waardoor deze snel kan opstijgen.</Text>
+        <Text key="SeamothAirBladderModule_MaxOneInstalled">Zwemblaassysteem al geïnstalleerd</Text>
     </LocalizationPackage>
 </LocalizationPackages>

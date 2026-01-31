@@ -8,29 +8,17 @@ namespace SeamothAirBladder.Mono
 {
     public class SeamothAirBladderBehavior : MonoBehaviour
     {
-        // Config file to persist air state per vehicle across game sessions
-        private static SeamothAirBladderStateConfig? stateConfig;
-
         // Air bladder state
         public float AirCapacity { get; } = 100f;
         public float AirDischargeRate { get; } = 10f;
-        public float AirRechargeRate { get; } = 25f;
+        public float AirRechargeRate { get; } = 40f;
         public float AirRemaining { get; private set; } = 100f;
         public bool IsInflated { get; private set; } = false;
-        private uGUI_SeamothAirBladderBar? bar = null;
-
-
-        // Audio
-        private AudioSource? airBladderAudioSource;
-        private AudioClip? airBladderClip;
-        private Coroutine? fadeOutCoroutine;
-        private AudioSource? rechargeAudioSource;
-        private AudioClip? rechargeClip;
-
+        private SeamothAirBladderBar? bar = null;
+        private SeamothAirBladderAudio? audio = null;
 
         // Physics
         private Rigidbody? seamothRigidbody;
-        private const float surfaceLevel = 0.0f;
         private float prevYPosition = float.MinValue;
 
         // Module existence check
@@ -43,52 +31,23 @@ namespace SeamothAirBladder.Mono
 
         private void Awake()
         {
-            bar = new uGUI_SeamothAirBladderBar();
+            bar = new SeamothAirBladderBar();
             bar.Create(); // Create immediately so RefreshBarPosition works
-
-            // Initialize state config file on first use
-            if (stateConfig == null)
-            {
-                stateConfig = new SeamothAirBladderStateConfig();
-                stateConfig.Load();
-            }
 
             // Restore air state for this vehicle if it was previously saved
             var prefabId = GetComponent<PrefabIdentifier>();
-            if (prefabId != null && stateConfig.VehicleAirStates.TryGetValue(prefabId.Id, out float savedAir))
+            if (prefabId != null && SeamothAirBladderStateManager.TryRestoreAirState(prefabId.Id, out float restoredAir))
             {
-                AirRemaining = savedAir;
+                AirRemaining = restoredAir;
             }
 
             // Cache Vehicle and Rigidbody components
             cachedVehicle = GetComponent<Vehicle>();
             seamothRigidbody = GetComponentInParent<Rigidbody>();
 
-            // Setup AudioSource for air bladder sound
-            airBladderAudioSource = gameObject.GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
-            airBladderAudioSource.playOnAwake = false;
-            airBladderAudioSource.spatialBlend = 1f; // 3D sound
-            airBladderAudioSource.loop = false;
-            airBladderAudioSource.volume = 0.3f;
-            airBladderAudioSource.pitch = 1.0f; // Optionally lower pitch for softer sound
-
-            // Load the AudioClip from Assets/Audio/sfx_tool_airbladder_use_01.wav (relative to mod folder)
-            string clipPath = System.IO.Path.Combine("Assets", "Audio", "sfx_tool_airbladder_use_01.wav");
-            airBladderClip = ResourceHandler.LoadAudioClipFromFile(clipPath);
-            if (airBladderClip == null)
-                Plugin.Log?.LogError($"Failed to load air bladder AudioClip from {clipPath}");
-
-            // Setup recharge AudioSource and load clip
-            rechargeAudioSource = gameObject.AddComponent<AudioSource>();
-            rechargeAudioSource.playOnAwake = false;
-            rechargeAudioSource.spatialBlend = 1f;
-            rechargeAudioSource.loop = false;
-            rechargeAudioSource.volume = 0.15f;
-            rechargeAudioSource.pitch = 1.0f;
-            string rechargeClipPath = System.IO.Path.Combine("Assets", "Audio", "sfx_tool_airbladder_equip_fillair_01.wav");
-            rechargeClip = ResourceHandler.LoadAudioClipFromFile(rechargeClipPath);
-            if (rechargeClip == null)
-                Plugin.Log?.LogError($"Failed to load recharge AudioClip from {rechargeClipPath}");
+            // Setup audio component
+            audio = gameObject.AddComponent<SeamothAirBladderAudio>();
+            audio.Initialize();
 
             prevYPosition = transform.position.y;
         }
@@ -170,15 +129,23 @@ namespace SeamothAirBladder.Mono
 
         private void OnDestroy()
         {
-            // Save air state for this vehicle so it persists across game sessions
-            if (stateConfig != null)
+            // Update air state in memory (will be saved to disk when game saves)
+            var prefabId = GetComponent<PrefabIdentifier>();
+            if (prefabId != null)
             {
-                var prefabId = GetComponent<PrefabIdentifier>();
-                if (prefabId != null)
-                {
-                    stateConfig.VehicleAirStates[prefabId.Id] = AirRemaining;
-                    stateConfig.Save();
-                }
+                SeamothAirBladderStateManager.UpdateAirState(prefabId.Id, AirRemaining);
+            }
+        }
+
+        /// <summary>
+        /// Updates this vehicle's air state in the config dictionary.
+        /// </summary>
+        public void UpdateAirStateInConfig()
+        {
+            var prefabId = GetComponent<PrefabIdentifier>();
+            if (prefabId != null)
+            {
+                SeamothAirBladderStateManager.UpdateAirState(prefabId.Id, AirRemaining);
             }
         }
 
@@ -233,7 +200,7 @@ namespace SeamothAirBladder.Mono
                 {
                     if (seamothRigidbody != null)
                     {
-                        float buoyancyForce = 3000f;
+                        float buoyancyForce = Mathf.Clamp(Plugin.Options.BuoyancyForce, Constants.MinBuoyancyForce, Constants.MaxBuoyancyForce);
                         VehicleHandler.ApplyBuoyancy(seamothRigidbody, buoyancyForce);
                     }
                     else
@@ -247,17 +214,16 @@ namespace SeamothAirBladder.Mono
         private void HandleRechargeWithSurfaceCrossing()
         {
             float threshold = 1.0f;
-            float surfaceThreshold = surfaceLevel - threshold;
+            float surfaceThreshold = Constants.SurfaceLevel - threshold;
             bool wasBelow = prevYPosition < surfaceThreshold;
             bool isNowAbove = transform.position.y >= surfaceThreshold;
 
             if (isNowAbove)
             {
                 // Play recharge sound only on crossing from below to above, and only if air is not full
-                if (wasBelow && AirRemaining < AirCapacity && rechargeAudioSource != null && rechargeClip != null)
+                if (wasBelow && AirRemaining < AirCapacity)
                 {
-                    rechargeAudioSource.clip = rechargeClip;
-                    rechargeAudioSource.Play();
+                    audio?.PlayRechargeSound();
                 }
                 AirRemaining += AirRechargeRate * Time.deltaTime;
                 if (AirRemaining > AirCapacity)
@@ -273,7 +239,7 @@ namespace SeamothAirBladder.Mono
         private bool IsAboveSurface()
         {
             // Assumes Y axis is up; adjust if your game uses a different axis for depth
-            return transform.position.y >= surfaceLevel;
+            return transform.position.y >= Constants.SurfaceLevel;
         }
 
         /// <summary>
@@ -281,7 +247,7 @@ namespace SeamothAirBladder.Mono
         /// </summary>
         private bool IsBelowSurface()
         {
-            return transform.position.y < surfaceLevel;
+            return transform.position.y < Constants.SurfaceLevel;
         }
 
         /// <summary>
@@ -292,18 +258,7 @@ namespace SeamothAirBladder.Mono
             if (IsBelowSurface() && AirRemaining > 0f && !IsInflated)
             {
                 IsInflated = true;
-                // Play air bladder AudioClip
-                if (airBladderAudioSource != null && airBladderClip != null)
-                {
-                    airBladderAudioSource.Stop();
-                    airBladderAudioSource.clip = airBladderClip;
-                    airBladderAudioSource.volume = 0.3f;
-                    airBladderAudioSource.Play();
-                }
-                else
-                {
-                    Plugin.Log?.LogWarning("Cannot play air bladder sound: AudioSource or AudioClip is null.");
-                }
+                audio?.PlayInflateSound();
             }
             else
             {
@@ -320,13 +275,7 @@ namespace SeamothAirBladder.Mono
             if (IsInflated)
             {
                 IsInflated = false;
-                // Fade out and stop the air bladder sound
-                if (airBladderAudioSource != null && airBladderAudioSource.isPlaying)
-                {
-                    if (fadeOutCoroutine != null)
-                        StopCoroutine(fadeOutCoroutine);
-                    fadeOutCoroutine = StartCoroutine(AudioHandler.FadeOutAndStop(airBladderAudioSource, 0.5f));
-                }
+                audio?.StopInflateSound();
             }
             else
             {

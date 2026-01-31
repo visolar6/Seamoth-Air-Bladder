@@ -4,11 +4,10 @@ using SeamothAirBladder.Mono;
 namespace SeamothAirBladder.Patches
 {
     /// <summary>
-    /// Patches Vehicle.OnPilotModeBegin and OnPilotModeEnd to refresh bar position
-    /// when entering/exiting vehicles, eliminating the need for continuous checking.
+    /// Patches Vehicle.OnPilotModeBegin to refresh bar position when entering vehicles.
     /// </summary>
     [HarmonyPatch]
-    public static class VehiclePilotPatches
+    public static class Vehicle_OnPilotModeBegin_Patch
     {
         /// <summary>
         /// Called when player enters a vehicle (pilot mode begins).
@@ -23,21 +22,6 @@ namespace SeamothAirBladder.Patches
             if (__instance.TryGetComponent<SeamothAirBladderBehavior>(out var behavior))
             {
                 behavior.RefreshBarPositionWithRetry();
-            }
-        }
-
-        /// <summary>
-        /// Called when player exits a vehicle (pilot mode ends).
-        /// Hides the bar when exiting Seamoth.
-        /// </summary>
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Vehicle), "OnPilotModeEnd")]
-        public static void OnPilotModeEnd_Postfix(Vehicle __instance)
-        {
-            // Check if this vehicle has the air bladder behavior
-            if (__instance.TryGetComponent<SeamothAirBladderBehavior>(out var behavior))
-            {
-                behavior.HideBar();
             }
         }
     }
