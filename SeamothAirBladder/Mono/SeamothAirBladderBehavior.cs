@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SeamothAirBladder.Config;
 using SeamothAirBladder.UI;
 using SeamothAirBladder.Utilities;
 using UnityEngine;
@@ -7,16 +8,15 @@ namespace SeamothAirBladder.Mono
 {
     public class SeamothAirBladderBehavior : MonoBehaviour
     {
-        // Static dictionary to persist air state per vehicle across module removal/addition
-        private static readonly Dictionary<int, float> vehicleAirState = [];
+        // Config file to persist air state per vehicle across game sessions
+        private static SeamothAirBladderStateConfig? stateConfig;
 
         // Air bladder state
         public float AirCapacity { get; } = 100f;
         public float AirDischargeRate { get; } = 10f;
         public float AirRechargeRate { get; } = 25f;
-        public float AirRemaining { get; private set; } = 0f;
+        public float AirRemaining { get; private set; } = 100f;
         public bool IsInflated { get; private set; } = false;
-        private bool isRecharging = false;
         private uGUI_SeamothAirBladderBar? bar = null;
 
 
@@ -34,23 +34,34 @@ namespace SeamothAirBladder.Mono
         private float prevYPosition = float.MinValue;
 
         // Module existence check
+        private Vehicle? cachedVehicle;
         private int framesWithoutModule = 0;
         private const int MaxFramesWithoutModule = 10; // Allow brief gaps during slot movement
+
+        // Bar position retry (for UI initialization delays)
+        private Coroutine? barPositionRetryCoroutine = null;
 
         private void Awake()
         {
             bar = new uGUI_SeamothAirBladderBar();
             bar.Create(); // Create immediately so RefreshBarPosition works
 
-            // Restore air state for this vehicle if it was previously removed and re-added
-            int vehicleId = gameObject.GetInstanceID();
-            if (vehicleAirState.TryGetValue(vehicleId, out float savedAir))
+            // Initialize state config file on first use
+            if (stateConfig == null)
             {
-                AirRemaining = savedAir;
-                Plugin.Log?.LogInfo($"[AirBladderBehavior] Restored air state: {AirRemaining}/{AirCapacity}");
+                stateConfig = new SeamothAirBladderStateConfig();
+                stateConfig.Load();
             }
 
-            // Try to get the Seamoth's Rigidbody (assumes this script is attached to the Seamoth or its child)
+            // Restore air state for this vehicle if it was previously saved
+            var prefabId = GetComponent<PrefabIdentifier>();
+            if (prefabId != null && stateConfig.VehicleAirStates.TryGetValue(prefabId.Id, out float savedAir))
+            {
+                AirRemaining = savedAir;
+            }
+
+            // Cache Vehicle and Rigidbody components
+            cachedVehicle = GetComponent<Vehicle>();
             seamothRigidbody = GetComponentInParent<Rigidbody>();
 
             // Setup AudioSource for air bladder sound
@@ -91,6 +102,49 @@ namespace SeamothAirBladder.Mono
             bar?.RefreshPosition();
         }
 
+        /// <summary>
+        /// Hides the bar explicitly. Called when exiting vehicle.
+        /// </summary>
+        public void HideBar()
+        {
+            bar?.HideBar();
+        }
+
+        /// <summary>
+        /// Attempts to refresh bar position with retries to handle UI initialization delays.
+        /// Useful when entering vehicle - QuickSlots UI may not be ready immediately.
+        /// </summary>
+        public void RefreshBarPositionWithRetry()
+        {
+            // Cancel any existing retry coroutine
+            if (barPositionRetryCoroutine != null)
+            {
+                StopCoroutine(barPositionRetryCoroutine);
+            }
+            barPositionRetryCoroutine = StartCoroutine(RetryRefreshBarPosition());
+        }
+
+        private System.Collections.IEnumerator RetryRefreshBarPosition()
+        {
+            const int maxAttempts = 20;
+            const float delayBetweenAttempts = 0.1f; // 100ms
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                bar?.RefreshPosition();
+
+                // Check if bar was successfully positioned
+                if (bar != null && bar.IsPositioned())
+                {
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(delayBetweenAttempts);
+            }
+
+            Plugin.Log?.LogWarning($"[AirBladderBehavior] Failed to position bar after {maxAttempts} attempts");
+        }
+
         private void Update()
         {
             // Check if the air bladder module still exists on the vehicle
@@ -99,7 +153,6 @@ namespace SeamothAirBladder.Mono
                 framesWithoutModule++;
                 if (framesWithoutModule >= MaxFramesWithoutModule)
                 {
-                    Plugin.Log?.LogInfo("[AirBladderBehavior] No module found for 10 frames, destroying behavior");
                     Destroy(this);
                     return;
                 }
@@ -117,12 +170,16 @@ namespace SeamothAirBladder.Mono
 
         private void OnDestroy()
         {
-            // Save air state for this vehicle so it persists across module removal/addition
-            int vehicleId = gameObject.GetInstanceID();
-            vehicleAirState[vehicleId] = AirRemaining;
-            Plugin.Log?.LogInfo($"[AirBladderBehavior] Saved air state: {AirRemaining}/{AirCapacity}");
-
-            bar?.Destroy();
+            // Save air state for this vehicle so it persists across game sessions
+            if (stateConfig != null)
+            {
+                var prefabId = GetComponent<PrefabIdentifier>();
+                if (prefabId != null)
+                {
+                    stateConfig.VehicleAirStates[prefabId.Id] = AirRemaining;
+                    stateConfig.Save();
+                }
+            }
         }
 
         /// <summary>
@@ -130,10 +187,10 @@ namespace SeamothAirBladder.Mono
         /// </summary>
         private bool HasAirBladderModule()
         {
-            if (!TryGetComponent<Vehicle>(out var vehicle))
+            if (cachedVehicle == null)
                 return false;
 
-            var modules = vehicle.GetSlotBinding();
+            var modules = cachedVehicle.GetSlotBinding();
             for (int i = 0; i < modules.Length; i++)
             {
                 if (modules[i] == Items.SeamothAirBladderModule.TechType)
@@ -196,7 +253,6 @@ namespace SeamothAirBladder.Mono
 
             if (isNowAbove)
             {
-                isRecharging = true;
                 // Play recharge sound only on crossing from below to above, and only if air is not full
                 if (wasBelow && AirRemaining < AirCapacity && rechargeAudioSource != null && rechargeClip != null)
                 {
@@ -209,10 +265,6 @@ namespace SeamothAirBladder.Mono
                     AirRemaining = AirCapacity;
                 }
             }
-            else
-            {
-                isRecharging = false;
-            }
         }
 
         /// <summary>
@@ -222,16 +274,6 @@ namespace SeamothAirBladder.Mono
         {
             // Assumes Y axis is up; adjust if your game uses a different axis for depth
             return transform.position.y >= surfaceLevel;
-        }
-
-        /// <summary>
-        /// Determines if the Seamoth is near the surface (within a certain threshold) to allow for recharging.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsNearSurface()
-        {
-            float threshold = 1.0f; // Define how close to the surface is considered "near"
-            return transform.position.y >= (surfaceLevel - threshold);
         }
 
         /// <summary>

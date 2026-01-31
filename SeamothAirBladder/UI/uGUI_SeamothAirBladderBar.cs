@@ -8,14 +8,9 @@ namespace SeamothAirBladder.UI
     public class uGUI_SeamothAirBladderBar
     {
         private Image? barImage;
-        private Canvas? canvas;
         private GameObject? barRoot;
-        private Transform? currentSlot;
         private int lastKnownSlotIndex = -1;
-
-        // Simple timer for slot monitoring
-        private float nextPositionCheckTime = 0f;
-        private const float CheckInterval = 0.1f; // 100ms
+        private static Material? cachedIconBarMaterial;
 
         public float FillAmount
         {
@@ -31,14 +26,10 @@ namespace SeamothAirBladder.UI
 
         public void Create()
         {
-            // Initialize timer
-            nextPositionCheckTime = Time.time;
-
             Transform? seamothHUDParent = FindSeamothHUDParent();
 
             if (seamothHUDParent != null)
             {
-                Plugin.Log?.LogInfo($"[AirBladderBar] Found HUD parent: {seamothHUDParent.name}");
                 // Center on the slot icon (0.5, 0.5 anchor) 
                 CreateBarWithShaderProps(seamothHUDParent, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(67, 67), 37f, 8f, 0.1f);
             }
@@ -50,8 +41,6 @@ namespace SeamothAirBladder.UI
 
         private Transform? FindSeamothHUDParent()
         {
-            Plugin.Log?.LogInfo("[AirBladderBar] Searching for QuickSlots with vehicle modules");
-
             // Find ScreenCanvas
             var allCanvases = Object.FindObjectsOfType<Canvas>();
             foreach (var canvas in allCanvases)
@@ -68,8 +57,6 @@ namespace SeamothAirBladder.UI
                             var quickSlots = content.Find("QuickSlots");
                             if (quickSlots != null)
                             {
-                                Plugin.Log?.LogInfo($"[AirBladderBar] Found QuickSlots, searching for air bladder module...");
-
                                 // Search all slots for the air bladder module
                                 foreach (Transform child in quickSlots)
                                 {
@@ -82,13 +69,12 @@ namespace SeamothAirBladder.UI
                                             var icon = foreground.GetComponent<uGUI_Icon>();
                                             // Only match our specific sprite name
                                             if (icon != null && icon.sprite != null &&
-                                                icon.sprite.name.ToLower().Contains("seamothairbladder"))
+                                                icon.sprite.name.IndexOf("seamothairbladder", System.StringComparison.OrdinalIgnoreCase) >= 0)
                                             {
                                                 // Verify it's actually the air bladder by checking parent has uGUI_ItemIcon
                                                 var itemIcon = child.GetComponent<uGUI_ItemIcon>();
                                                 if (itemIcon != null)
                                                 {
-                                                    Plugin.Log?.LogInfo($"[AirBladderBar] Found air bladder module slot");
                                                     return child;
                                                 }
                                             }
@@ -138,8 +124,14 @@ namespace SeamothAirBladder.UI
             img.type = Image.Type.Simple; // Simple type, like vanilla
             img.color = Color.white; // White to allow material colors through
 
-            var iconBarMat = Resources.FindObjectsOfTypeAll<Material>()
-                .FirstOrDefault(m => m.name == "UI/IconBar");
+            var iconBarMat = cachedIconBarMaterial;
+            if (iconBarMat == null)
+            {
+                iconBarMat = Resources.FindObjectsOfTypeAll<Material>()
+                    .FirstOrDefault(m => m.name == "UI/IconBar");
+                cachedIconBarMaterial = iconBarMat;
+            }
+
             if (iconBarMat != null)
             {
                 // Create material instance to avoid modifying the shared material
@@ -167,8 +159,6 @@ namespace SeamothAirBladder.UI
                 matInstance.SetColor("_Color1", new Color(0.976f, 0.839f, 0.341f, 1f)); // Yellow
                 matInstance.SetColor("_Color2", new Color(0.643f, 0.843f, 0.412f, 1f)); // Green
 
-                // Log to verify
-                Plugin.Log?.LogInfo($"Created bar with R={radius}, W={width}, C={cut}");
             }
             else
             {
@@ -179,26 +169,9 @@ namespace SeamothAirBladder.UI
                 barImage = img;
         }
 
-        /// <summary>
-        /// Repositions the bar to the current slot containing the air bladder module.
-        /// Call this when the module is added or moved between slots.
-        /// </summary>
-        public void RefreshPosition()
-        {
-            // Just call UpdateBarPosition - it handles creating the bar if needed
-            UpdateBarPosition();
-        }
-
         public void Update(float airRemaining, float airCapacity)
         {
-            // Check position every 100ms to detect slot changes and vehicle entry/exit
-            if (Time.time >= nextPositionCheckTime)
-            {
-                UpdateBarPosition();
-                nextPositionCheckTime = Time.time + CheckInterval;
-            }
-
-            // Only update fill if bar exists
+            // Only update shader fill value - position updates handled by callbacks
             if (barImage != null)
             {
                 float fill = Mathf.Clamp01(airRemaining / airCapacity);
@@ -206,7 +179,7 @@ namespace SeamothAirBladder.UI
             }
         }
 
-        private void UpdateBarPosition()
+        public void RefreshPosition()
         {
             // Find which slot currently has the air bladder module
             var slotWithModule = FindSlotWithAirBladderModule();
@@ -214,19 +187,7 @@ namespace SeamothAirBladder.UI
             if (slotWithModule == null)
             {
                 // Module not found - hide the bar
-                if (barRoot != null && barRoot.activeSelf)
-                {
-                    Plugin.Log?.LogInfo("[AirBladderBar] Module removed, hiding bar");
-                    barRoot.SetActive(false);
-                }
-
-                // Reset search if we previously had a valid slot (exited vehicle)
-                if (lastKnownSlotIndex >= 0)
-                {
-                    Plugin.Log?.LogInfo("[AirBladderBar] Lost slot, will search again");
-                }
-
-                lastKnownSlotIndex = -1;
+                HideBar();
                 return;
             }
 
@@ -236,13 +197,10 @@ namespace SeamothAirBladder.UI
             // Check if slot changed
             if (slotIndex != lastKnownSlotIndex)
             {
-                Plugin.Log?.LogInfo($"[AirBladderBar] Module moved to slot {slotIndex}, updating position");
-
                 // Create bar if it doesn't exist yet
                 if (barRoot == null)
                 {
-                    Plugin.Log?.LogInfo("[AirBladderBar] Creating bar now that slot is found");
-                    CreateBarWithShaderProps(slotWithModule, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(67, 67), 37f, 9f, 0.1f);
+                    CreateBarWithShaderProps(slotWithModule, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(67, 67), 37f, 8f, 0.1f);
                 }
                 else
                 {
@@ -260,20 +218,17 @@ namespace SeamothAirBladder.UI
                     barRoot.SetActive(true);
                 }
 
-                currentSlot = slotWithModule;
                 lastKnownSlotIndex = slotIndex;
             }
             else if (barRoot != null && !barRoot.activeSelf)
             {
                 // Module is back, show the bar
-                Plugin.Log?.LogInfo("[AirBladderBar] Module found again, showing bar");
                 barRoot.SetActive(true);
             }
         }
 
         private Transform? FindSlotWithAirBladderModule()
         {
-            Plugin.Log?.LogInfo("[AirBladderBar] FindSlotWithAirBladderModule called");
             var allCanvases = Object.FindObjectsOfType<Canvas>();
             foreach (var canvas in allCanvases)
             {
@@ -292,17 +247,15 @@ namespace SeamothAirBladder.UI
                                 if (foreground != null)
                                 {
                                     var icon = foreground.GetComponent<uGUI_Icon>();
-                                    Plugin.Log?.LogInfo($"[AirBladderBar] Slot {slotCount}: sprite={icon?.sprite?.name ?? "null"}");
 
                                     // Only match our specific sprite name
                                     if (icon != null && icon.sprite != null &&
-                                        icon.sprite.name.ToLower().Contains("seamothairbladder"))
+                                        icon.sprite.name.IndexOf("seamothairbladder", System.StringComparison.OrdinalIgnoreCase) >= 0)
                                     {
                                         // Verify it's actually the air bladder by checking parent has uGUI_ItemIcon
                                         var itemIcon = child.GetComponent<uGUI_ItemIcon>();
                                         if (itemIcon != null)
                                         {
-                                            Plugin.Log?.LogInfo($"[AirBladderBar] Found module in slot {slotCount}");
                                             return child;
                                         }
                                     }
@@ -310,11 +263,9 @@ namespace SeamothAirBladder.UI
                                 slotCount++;
                             }
                         }
-                        Plugin.Log?.LogInfo($"[AirBladderBar] Searched {slotCount} slots, module not found");
                     }
                 }
             }
-            Plugin.Log?.LogInfo("[AirBladderBar] QuickSlots not found");
             return null;
         }
 
@@ -334,10 +285,25 @@ namespace SeamothAirBladder.UI
             return -1;
         }
 
-        public void Destroy()
+        /// <summary>
+        /// Checks if the bar is currently positioned and visible.
+        /// Used by retry logic to determine if positioning was successful.
+        /// </summary>
+        public bool IsPositioned()
         {
-            if (canvas != null)
-                Object.Destroy(canvas.gameObject);
+            return barRoot != null && barRoot.activeSelf && lastKnownSlotIndex >= 0;
+        }
+
+        /// <summary>
+        /// Explicitly hides the bar. Called when exiting vehicle to ensure bar is hidden.
+        /// </summary>
+        public void HideBar()
+        {
+            if (barRoot != null && barRoot.activeSelf)
+            {
+                barRoot.SetActive(false);
+            }
+            lastKnownSlotIndex = -1;
         }
     }
 }
