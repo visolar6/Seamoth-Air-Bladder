@@ -21,6 +21,7 @@ namespace SeamothAirBladder.Mono
         private Vehicle? cachedVehicle;
         private int framesWithoutModule = 0;
         private Coroutine? barPositionRetryCoroutine = null;
+        private float lastRechargeSoundTime = -10f; // Track when recharge sound last played
 
         // --- Properties ---
         public float AirCapacity { get; } = 100f;
@@ -127,9 +128,9 @@ namespace SeamothAirBladder.Mono
         {
             if (AirRemaining < AirCapacity)
             {
+                AirRemaining = AirCapacity;
                 StartCoroutine(PlayRechargeSoundWithDelay(1f));
             }
-            AirRemaining = AirCapacity;
         }
 
         /// <summary>
@@ -257,7 +258,7 @@ namespace SeamothAirBladder.Mono
 
         private void HandleRechargeWithSurfaceCrossing()
         {
-            float threshold = 1.0f;
+            float threshold = 0.5f; // allow refilling without needing to launch the seamoth out of the water
             float surfaceThreshold = Constants.SurfaceLevel - threshold;
             bool wasBelow = prevYPosition < surfaceThreshold;
             bool isNowAbove = transform.position.y >= surfaceThreshold;
@@ -265,9 +266,12 @@ namespace SeamothAirBladder.Mono
             if (isNowAbove)
             {
                 // Play recharge sound only on crossing from below to above, and only if air is not full
-                if (wasBelow && AirRemaining < AirCapacity)
+                // Also enforce a cooldown to prevent repeated sounds when docked and vehicle position oscillates
+                const float rechargeSoundCooldown = 2f; // Minimum 2 seconds between recharge sounds
+                if (wasBelow && AirRemaining < AirCapacity && Time.time - lastRechargeSoundTime >= rechargeSoundCooldown)
                 {
                     audio?.PlayRechargeSound();
+                    lastRechargeSoundTime = Time.time;
                 }
                 AirRemaining = Mathf.Min(AirRemaining + AirRechargeRate * Time.deltaTime, AirCapacity);
             }
