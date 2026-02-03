@@ -6,15 +6,14 @@ namespace SeamothAirBladder.Patches
     /// <summary>
     /// Patches Equipment.AddItem to prevent duplicate air bladder installations.
     /// </summary>
-    [HarmonyPatch]
-    public class Equipment_AddItem_Patch
+    [HarmonyPatch(typeof(Equipment), nameof(Equipment.AddItem))]
+    public class Equipment_AddItem
     {
         /// <summary>
         /// Prevents adding duplicate air bladder modules to the same vehicle.
         /// </summary>
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Equipment), nameof(Equipment.AddItem))]
-        public static bool AddItem_Prefix(Equipment __instance, string slot, InventoryItem newItem, ref bool __result)
+        public static bool Prefix(Equipment __instance, string slot, InventoryItem newItem, ref bool __result)
         {
             // Only check if this is a vehicle equipment and the item is an air bladder module
             if (newItem?.item?.GetTechType() == SeamothAirBladderModule.TechType)

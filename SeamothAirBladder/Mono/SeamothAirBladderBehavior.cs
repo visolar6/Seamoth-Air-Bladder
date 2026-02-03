@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using SeamothAirBladder.Config;
 using SeamothAirBladder.UI;
@@ -8,27 +9,27 @@ namespace SeamothAirBladder.Mono
 {
     public class SeamothAirBladderBehavior : MonoBehaviour
     {
-        // Air bladder state
+
+        // --- Constants ---
+        private const int MaxFramesWithoutModule = 10; // Allow brief gaps during slot movement
+
+        // --- Fields ---
+        private SeamothAirBladderBar? bar = null;
+        private SeamothAirBladderAudio? audio = null;
+        private Rigidbody? seamothRigidbody;
+        private float prevYPosition = float.MinValue;
+        private Vehicle? cachedVehicle;
+        private int framesWithoutModule = 0;
+        private Coroutine? barPositionRetryCoroutine = null;
+
+        // --- Properties ---
         public float AirCapacity { get; } = 100f;
         public float AirDischargeRate { get; } = 10f;
         public float AirRechargeRate { get; } = 40f;
         public float AirRemaining { get; private set; } = 100f;
         public bool IsInflated { get; private set; } = false;
-        private SeamothAirBladderBar? bar = null;
-        private SeamothAirBladderAudio? audio = null;
 
-        // Physics
-        private Rigidbody? seamothRigidbody;
-        private float prevYPosition = float.MinValue;
-
-        // Module existence check
-        private Vehicle? cachedVehicle;
-        private int framesWithoutModule = 0;
-        private const int MaxFramesWithoutModule = 10; // Allow brief gaps during slot movement
-
-        // Bar position retry (for UI initialization delays)
-        private Coroutine? barPositionRetryCoroutine = null;
-
+        // --- Unity Methods ---
         private void Awake()
         {
             bar = new SeamothAirBladderBar();
@@ -47,61 +48,8 @@ namespace SeamothAirBladder.Mono
 
             // Setup audio component
             audio = gameObject.AddComponent<SeamothAirBladderAudio>();
-            audio.Initialize();
 
             prevYPosition = transform.position.y;
-        }
-
-        /// <summary>
-        /// Updates the bar position to match the current slot containing the air bladder module.
-        /// Called from OnModuleAdded when the module is installed or moved.
-        /// </summary>
-        public void RefreshBarPosition()
-        {
-            bar?.RefreshPosition();
-        }
-
-        /// <summary>
-        /// Hides the bar explicitly. Called when exiting vehicle.
-        /// </summary>
-        public void HideBar()
-        {
-            bar?.HideBar();
-        }
-
-        /// <summary>
-        /// Attempts to refresh bar position with retries to handle UI initialization delays.
-        /// Useful when entering vehicle - QuickSlots UI may not be ready immediately.
-        /// </summary>
-        public void RefreshBarPositionWithRetry()
-        {
-            // Cancel any existing retry coroutine
-            if (barPositionRetryCoroutine != null)
-            {
-                StopCoroutine(barPositionRetryCoroutine);
-            }
-            barPositionRetryCoroutine = StartCoroutine(RetryRefreshBarPosition());
-        }
-
-        private System.Collections.IEnumerator RetryRefreshBarPosition()
-        {
-            const int maxAttempts = 20;
-            const float delayBetweenAttempts = 0.1f; // 100ms
-
-            for (int attempt = 0; attempt < maxAttempts; attempt++)
-            {
-                bar?.RefreshPosition();
-
-                // Check if bar was successfully positioned
-                if (bar != null && bar.IsPositioned())
-                {
-                    yield break;
-                }
-
-                yield return new WaitForSeconds(delayBetweenAttempts);
-            }
-
-            Plugin.Log?.LogWarning($"[AirBladderBehavior] Failed to position bar after {maxAttempts} attempts");
         }
 
         private void Update()
@@ -137,6 +85,53 @@ namespace SeamothAirBladder.Mono
             }
         }
 
+
+        // --- Public API ---
+
+        /// <summary>
+        /// Inflates the Seamoth's air bladder, increasing its buoyancy until it runs out of air. Discharges air over time.
+        /// </summary>
+        public void Inflate()
+        {
+            if (IsBelowSurface() && AirRemaining > 0f && !IsInflated)
+            {
+                IsInflated = true;
+                audio?.PlayInflateSound();
+            }
+            else
+            {
+                Plugin.Log?.LogWarning("Cannot inflate Seamoth air bladder: either already inflated, no air remaining, or not below surface.");
+            }
+        }
+
+        /// <summary>
+        /// Deflates the Seamoth's air bladder, returning its buoyancy to normal. Does not recharge air, only stops inflation.
+        /// </summary>
+        public void Deflate()
+        {
+            if (IsInflated)
+            {
+                IsInflated = false;
+                audio?.StopInflateSound();
+            }
+            else
+            {
+                Plugin.Log?.LogWarning("Cannot deflate Seamoth air bladder: already deflated.");
+            }
+        }
+
+        /// <summary>
+        /// Instantly recharges the air bladder to full capacity when docked.
+        /// </summary>
+        public void StartDockedRecharge()
+        {
+            if (AirRemaining < AirCapacity)
+            {
+                StartCoroutine(PlayRechargeSoundWithDelay(1f));
+            }
+            AirRemaining = AirCapacity;
+        }
+
         /// <summary>
         /// Updates this vehicle's air state in the config dictionary.
         /// </summary>
@@ -150,8 +145,61 @@ namespace SeamothAirBladder.Mono
         }
 
         /// <summary>
-        /// Checks if any vehicle slot currently has the air bladder module installed.
+        /// Updates the bar position to match the current slot containing the air bladder module.
+        /// Called from OnModuleAdded when the module is installed or moved.
         /// </summary>
+        public void RefreshBarPosition()
+        {
+            bar?.RefreshPosition();
+        }
+
+
+        /// <summary>
+        /// Hides the bar explicitly. Called when exiting vehicle.
+        /// </summary>
+        public void HideBar()
+        {
+            bar?.HideBar();
+        }
+
+
+        /// <summary>
+        /// Attempts to refresh bar position with retries to handle UI initialization delays.
+        /// Useful when entering vehicle - QuickSlots UI may not be ready immediately.
+        /// </summary>
+        public void RefreshBarPositionWithRetry()
+        {
+            // Cancel any existing retry coroutine
+            if (barPositionRetryCoroutine != null)
+            {
+                StopCoroutine(barPositionRetryCoroutine);
+            }
+            barPositionRetryCoroutine = StartCoroutine(RetryRefreshBarPosition());
+        }
+
+        // --- Private Methods ---
+
+        private IEnumerator RetryRefreshBarPosition()
+        {
+            const int maxAttempts = 20;
+            const float delayBetweenAttempts = 0.1f; // 100ms
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                bar?.RefreshPosition();
+
+                // Check if bar was successfully positioned
+                if (bar != null && bar.IsPositioned())
+                {
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(delayBetweenAttempts);
+            }
+
+            Plugin.Log?.LogWarning($"[AirBladderBehavior] Failed to position bar after {maxAttempts} attempts");
+        }
+
         private bool HasAirBladderModule()
         {
             if (cachedVehicle == null)
@@ -166,12 +214,8 @@ namespace SeamothAirBladder.Mono
             return false;
         }
 
-        /// <summary>
-        /// Handles the inflation logic: air discharge, buoyancy, depletion, and surfacing.
-        /// </summary>
         private void HandleInflation()
         {
-
             if (!IsInflated) return;
 
             // If at surface, apply downward force to counteract excess velocity, then deflate
@@ -225,62 +269,25 @@ namespace SeamothAirBladder.Mono
                 {
                     audio?.PlayRechargeSound();
                 }
-                AirRemaining += AirRechargeRate * Time.deltaTime;
-                if (AirRemaining > AirCapacity)
-                {
-                    AirRemaining = AirCapacity;
-                }
+                AirRemaining = Mathf.Min(AirRemaining + AirRechargeRate * Time.deltaTime, AirCapacity);
             }
         }
 
-        /// <summary>
-        /// Determines if the Seamoth is at the surface (can recharge air).
-        /// </summary>
+        private IEnumerator PlayRechargeSoundWithDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            audio?.PlayRechargeSound();
+        }
+
         private bool IsAboveSurface()
         {
             // Assumes Y axis is up; adjust if your game uses a different axis for depth
             return transform.position.y >= Constants.SurfaceLevel;
         }
 
-        /// <summary>
-        /// Determines if the Seamoth is below the surface.
-        /// </summary>
         private bool IsBelowSurface()
         {
             return transform.position.y < Constants.SurfaceLevel;
-        }
-
-        /// <summary>
-        /// Inflates the Seamoth's air bladder, increasing its buoyancy until it runs out of air. Discharges air over time.
-        /// </summary>
-        public void Inflate()
-        {
-            if (IsBelowSurface() && AirRemaining > 0f && !IsInflated)
-            {
-                IsInflated = true;
-                audio?.PlayInflateSound();
-            }
-            else
-            {
-                Plugin.Log?.LogWarning("Cannot inflate Seamoth air bladder: either already inflated, no air remaining, or not below surface.");
-            }
-        }
-
-
-        /// <summary>
-        /// Deflates the Seamoth's air bladder, returning its buoyancy to normal. Does not recharge air, only stops inflation.
-        /// </summary>
-        public void Deflate()
-        {
-            if (IsInflated)
-            {
-                IsInflated = false;
-                audio?.StopInflateSound();
-            }
-            else
-            {
-                Plugin.Log?.LogWarning("Cannot deflate Seamoth air bladder: already deflated.");
-            }
         }
     }
 }

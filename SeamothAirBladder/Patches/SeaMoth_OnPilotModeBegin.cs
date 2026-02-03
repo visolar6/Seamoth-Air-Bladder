@@ -4,19 +4,18 @@ using SeamothAirBladder.Mono;
 namespace SeamothAirBladder.Patches
 {
     /// <summary>
-    /// Patches Vehicle.OnPilotModeBegin to refresh bar position when entering vehicles.
+    /// Patches SeaMoth.OnPilotModeBegin to refresh bar position when entering seamoths.
     /// </summary>
-    [HarmonyPatch]
-    public static class Vehicle_OnPilotModeBegin_Patch
+    [HarmonyPatch(typeof(SeaMoth), "OnPilotModeBegin")]
+    public static class SeaMoth_OnPilotModeBegin
     {
         /// <summary>
-        /// Called when player enters a vehicle (pilot mode begins).
+        /// Called when player enters a seamoth (pilot mode begins).
         /// Refreshes bar position to show it when entering Seamoth with air bladder module.
         /// Uses retry logic to handle UI initialization delays.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Vehicle), "OnPilotModeBegin")]
-        public static void OnPilotModeBegin_Postfix(Vehicle __instance)
+        public static void Postfix(SeaMoth __instance)
         {
             // Check if this vehicle has the air bladder behavior
             if (__instance.TryGetComponent<SeamothAirBladderBehavior>(out var behavior))

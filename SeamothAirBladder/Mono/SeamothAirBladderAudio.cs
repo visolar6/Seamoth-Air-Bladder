@@ -9,41 +9,38 @@ namespace SeamothAirBladder.Mono
     /// </summary>
     public class SeamothAirBladderAudio : MonoBehaviour
     {
-        private AudioSource? inflateAudioSource;
-        private AudioClip? inflateClip;
+
+        private AudioSource inflateAudioSource = null!;
+        private AudioClip inflateClip = null!;
         private Coroutine? fadeOutCoroutine;
 
-        private AudioSource? rechargeAudioSource;
-        private AudioClip? rechargeClip;
+        private AudioSource rechargeAudioSource = null!;
+        private AudioClip rechargeClip = null!;
 
-        public void Initialize()
+        private void Awake()
         {
-            // Setup AudioSource for inflate sound
-            inflateAudioSource = gameObject.GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
-            inflateAudioSource.playOnAwake = false;
-            inflateAudioSource.spatialBlend = 1f; // 3D sound
-            inflateAudioSource.loop = false;
-            inflateAudioSource.volume = 0.3f;
-            inflateAudioSource.pitch = 1.0f;
-
-            // Load the inflate AudioClip
+            inflateAudioSource = SetupAudioSource(gameObject, 0.3f, false);
             string clipPath = System.IO.Path.Combine("Assets", "Audio", "sfx_tool_airbladder_use_01.wav");
-            inflateClip = ResourceHandler.LoadAudioClipFromFile(clipPath);
+            inflateClip = ResourceHandler.LoadAudioClipFromFile(clipPath)!;
             if (inflateClip == null)
-                Plugin.Log?.LogError($"Failed to load air bladder AudioClip from {clipPath}");
+                Plugin.Log?.LogError($"[{nameof(SeamothAirBladderAudio)}] Failed to load air bladder AudioClip from {clipPath}");
 
-            // Setup recharge AudioSource and load clip
-            rechargeAudioSource = gameObject.AddComponent<AudioSource>();
-            rechargeAudioSource.playOnAwake = false;
-            rechargeAudioSource.spatialBlend = 1f;
-            rechargeAudioSource.loop = false;
-            rechargeAudioSource.volume = 0.15f;
-            rechargeAudioSource.pitch = 1.0f;
-
+            rechargeAudioSource = SetupAudioSource(gameObject, 0.15f, false);
             string rechargeClipPath = System.IO.Path.Combine("Assets", "Audio", "sfx_tool_airbladder_equip_fillair_01.wav");
-            rechargeClip = ResourceHandler.LoadAudioClipFromFile(rechargeClipPath);
+            rechargeClip = ResourceHandler.LoadAudioClipFromFile(rechargeClipPath)!;
             if (rechargeClip == null)
-                Plugin.Log?.LogError($"Failed to load recharge AudioClip from {rechargeClipPath}");
+                Plugin.Log?.LogError($"[{nameof(SeamothAirBladderAudio)}] Failed to load recharge AudioClip from {rechargeClipPath}");
+        }
+
+        private static AudioSource SetupAudioSource(GameObject go, float volume, bool loop)
+        {
+            var source = go.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = 1f;
+            source.loop = loop;
+            source.volume = volume;
+            source.pitch = 1.0f;
+            return source;
         }
 
         /// <summary>
@@ -60,7 +57,7 @@ namespace SeamothAirBladder.Mono
             }
             else
             {
-                Plugin.Log?.LogWarning("Cannot play air bladder sound: AudioSource or AudioClip is null.");
+                Plugin.Log?.LogWarning($"[{nameof(SeamothAirBladderAudio)}] Cannot play air bladder sound: AudioSource or AudioClip is null.");
             }
         }
 
@@ -84,8 +81,7 @@ namespace SeamothAirBladder.Mono
         {
             if (rechargeAudioSource != null && rechargeClip != null)
             {
-                rechargeAudioSource.clip = rechargeClip;
-                rechargeAudioSource.Play();
+                rechargeAudioSource.PlayOneShot(rechargeClip);
             }
         }
     }

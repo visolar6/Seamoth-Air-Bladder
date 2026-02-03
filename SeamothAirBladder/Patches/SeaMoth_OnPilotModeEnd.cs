@@ -1,22 +1,20 @@
 using HarmonyLib;
-using SeamothAirBladder.Items;
 using SeamothAirBladder.Mono;
 
 namespace SeamothAirBladder.Patches
 {
     /// <summary>
-    /// Patches Vehicle.OnPilotModeEnd to hide the air bladder bar when exiting vehicles.
+    /// Patches SeaMoth.OnPilotModeEnd to hide the air bladder bar when exiting seamoths.
     /// </summary>
-    [HarmonyPatch]
-    public static class Vehicle_OnPilotModeEnd_Patch
+    [HarmonyPatch(typeof(SeaMoth), "OnPilotModeEnd")]
+    public static class SeaMoth_OnPilotModeEnd
     {
         /// <summary>
-        /// Called when player exits a vehicle (pilot mode ends).
+        /// Called when player exits a seamoth (pilot mode ends).
         /// Hides the bar when exiting Seamoth.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Vehicle), "OnPilotModeEnd")]
-        public static void OnPilotModeEnd_Postfix(Vehicle __instance)
+        public static void Postfix(SeaMoth __instance)
         {
             // Check if this vehicle has the air bladder behavior
             if (__instance.TryGetComponent<SeamothAirBladderBehavior>(out var behavior))
