@@ -7,10 +7,11 @@ A Subnautica mod that adds an air bladder module for the Seamoth, allowing for r
 - **Emergency Ascent System**: Activate the air bladder to rapidly ascend to the surface
 - **Limited Air Supply**: The bladder has 100 units of air that depletes during use
 - **Surface Recharging**: Air automatically recharges when near the surface
+- **Base Recharging**: Air automatically recharges when docking at a moonpool or cyclops bay
 - **Visual HUD Bar**: Circular bar indicator next to the module slot showing remaining air
 - **Persistent State**: Air levels are saved per vehicle and persist across game sessions
-- **Configurable Buoyancy**: Adjust the ascent force to your preference
-- **Single Module Limit**: Only one air bladder can be installed per Seamoth
+- **Configurable Buoyancy**: Adjust the ascent force to your preference in the mod options
+- **Single Module Limit**: Safeguard so that only one air bladder can be installed per Seamoth
 
 ## Installation
 

@@ -18,7 +18,7 @@ namespace SeamothAirBladder
 
         internal const string Name = "Seamoth Air Bladder";
 
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.1.0";
 
         private readonly Harmony _harmony = new(GUID);
 
